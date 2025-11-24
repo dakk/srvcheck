@@ -564,6 +564,7 @@ class Substrate(Chain):
         result = self.sub_iface.query(
             module="Staking", storage_function="ActiveEra", params=[]
         )
+        print(result)
         return result.value["index"]
 
     def isValidator(self):
