@@ -66,7 +66,7 @@ class SubstrateInterfaceWrapper(SubstrateInterface):
 
 class TaskSubstrateTurboflakesGrade(Task):
     "https://github.com/turboflakes/one-t/blob/main/LEGENDS.md#val-performance-report-legend"
-    def __init__(self, services, checkEvery=minutes(5), notifyEvery=minutes(10)):
+    def __init__(self, services, checkEvery=minutes(5), notifyEvery=minutes(5)):
         super().__init__("TaskSubstrateTurboflakesGrade", services, checkEvery, notifyEvery)
 
         self.lastRatio = None
@@ -102,7 +102,7 @@ class TaskSubstrateTurboflakesGrade(Task):
         bvr = 1.0 - mvr
         bar = float(data['para']['bitfields']['ba']) / float(data['para']['bitfields']['ba'] + data['para']['bitfields']['bu'])
         ratio = bvr * 0.75 + bar * 0.25
-        return ratio * 100.
+        return int(ratio * 100.)
 
     @staticmethod
     def isPluggable(services):
@@ -112,50 +112,57 @@ class TaskSubstrateTurboflakesGrade(Task):
 
     def run(self):
         stash_address = self.s.conf.getOrDefault('chain.validatorAddress')
+        notified = False 
+
         if self.ratio is None:
             self.ratio = self.getCurrentRatio()
             self.lastRatio = self.ratio
-            self.notify(
+            notified = self.notify(
                 f"Ratio initialized for stash {stash_address}: {self.ratio}% " 
-                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
+                + f"{Emoji.Helmet}",
                 level=NotificationLevel.Info,
             )
         elif self.lastRatio > self.ratio:
-            self.notify(
+            notified = self.notify(
                 f"Ratio decreased for stash {stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
-                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
+                + f"{Emoji.PosDown}",
                 level=NotificationLevel.Warning,
             )
         elif self.lastRatio < self.ratio:
-            self.notify(
+            notified = self.notify(
                 f"Ratio increased for stash {stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
-                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
+                + f"{Emoji.PosUp}",
                 level=NotificationLevel.Info,
             )
         elif self.ratio < 90:
-            self.notify(
+            notified = self.notify(
                 f"Ratio is below 90% for stash {stash_address} is {self.ratio}% " 
-                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
+                + f"{Emoji.Health}",
                 level=NotificationLevel.Warning,
             )
         elif self.ratio < 80:
-            self.notify(
+            notified = self.notify(
                 f"Ratio is below 80% for stash {stash_address} is {self.ratio}% " 
-                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
+                + f"{Emoji.Health}",
                 level=NotificationLevel.Error,
                 noCheck=True
             )
-        else:
-            self.notify(
-                f"Node ratio for stash {stash_address} is {self.ratio}%: " 
-                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)}",
-                level=NotificationLevel.Info,
-            )
+        # else:
+        #     notified = self.notify(
+        #         f"Node ratio for stash {stash_address} is {self.ratio}%: " 
+        #         + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)}",
+        #         level=NotificationLevel.Info,
+        #     )
 
         self.lastRatio = self.ratio
-        return True
+        return notified
 
 
 class TaskSubstrateNewReferenda(Task):

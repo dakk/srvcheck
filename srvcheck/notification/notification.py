@@ -32,6 +32,7 @@ class Emoji:
     Start = "\U0001F514"
     Disk = "\U0001F4BE"
     Stuck = "\U000026D4"
+    Helmet = "\U000026D1"
     Rel = "\U0001F4BF"
     Peers = "\U0001F198"
     Sync = "\U00002757"
