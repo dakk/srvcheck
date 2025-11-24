@@ -118,14 +118,14 @@ class TaskSubstrateTurboflakesGrade(Task):
             self.ratio = self.getCurrentRatio()
             self.lastRatio = self.ratio
             notified = self.notify(
-                f"Ratio initialized for stash {stash_address}: {self.ratio}% " 
+                f"Ratio initialized: {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Helmet}",
                 level=NotificationLevel.Info,
             )
         elif self.lastRatio > self.ratio:
             notified = self.notify(
-                f"Ratio decreased for stash {stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
+                f"Ratio decreased to {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.PosDown}",
@@ -133,7 +133,7 @@ class TaskSubstrateTurboflakesGrade(Task):
             )
         elif self.lastRatio < self.ratio:
             notified = self.notify(
-                f"Ratio increased for stash {stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
+                f"Ratio increased to {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.PosUp}",
@@ -141,14 +141,14 @@ class TaskSubstrateTurboflakesGrade(Task):
             )
         elif self.ratio < 90:
             notified = self.notify(
-                f"Ratio is below 90% for stash {stash_address} is {self.ratio}% " 
+                f"Ratio is below 90%: {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Health}",
                 level=NotificationLevel.Warning,
             )
         elif self.ratio < 80:
             notified = self.notify(
-                f"Ratio is below 80% for stash {stash_address} is {self.ratio}% " 
+                f"Ratio is below 80%: {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Health}",
                 level=NotificationLevel.Error,
@@ -156,7 +156,7 @@ class TaskSubstrateTurboflakesGrade(Task):
             )
         # else:
         #     notified = self.notify(
-        #         f"Node ratio for stash {stash_address} is {self.ratio}%: " 
+        #         f"Node ratio is {self.ratio}%: " 
         #         + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)}",
         #         level=NotificationLevel.Info,
         #     )
@@ -561,11 +561,11 @@ class Substrate(Chain):
         return result.value
 
     def getEra(self):
-        result = self.sub_iface.query(
-            module="Staking", storage_function="ActiveEra", params=[]
-        )
-        print(result)
-        return result.value["index"]
+        try:
+            result = self.sub_iface.query("Staking", "ActiveEra")
+            return result.value["index"]
+        except:
+            return self.sub_iface.query("Session", "CurrentIndex") / 6
 
     def isValidator(self):
         collator = self.conf.getOrDefault("chain.validatorAddress")
