@@ -106,6 +106,7 @@ class TaskSubstrateTurboflakesGrade(Task):
 
     @staticmethod
     def isPluggable(services):
+        print('srvcheck', services.chain.getNetwork())
         if services.chain.getNetwork() in ["Kusama", "Polkadot"]:
             return True
         return False
