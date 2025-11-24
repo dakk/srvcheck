@@ -95,7 +95,7 @@ class TaskSubstrateTurboflakesGrade(Task):
 
     def getCurrentRatio(self):
         uri = f"https://{self.s.chain.getNetwork().lower()}-onet-api.turboflakes.io/"
-        uri += f"api/v1/validators/{self.s.conf.getOrDefault("chain.validatorAddress")}"
+        uri += f"api/v1/validators/{self.s.conf.getOrDefault('chain.validatorAddress')}"
         uri += "?session=current&show_summary=true&show_stats=true&show_discovery=true"
         data = getCall(uri, None)['result']
         mvr = float(data['para_summary']['mv']) / float(data['para_summary']['iv'] + data['para_summary']['ev'] + data['para_summary']['mv'])
@@ -106,7 +106,6 @@ class TaskSubstrateTurboflakesGrade(Task):
 
     @staticmethod
     def isPluggable(services):
-        print('srvcheck', services.chain.getNetwork())
         if services.chain.getNetwork() in ["Kusama", "Polkadot"]:
             return True
         return False
