@@ -565,7 +565,7 @@ class Substrate(Chain):
             result = self.sub_iface.query("Staking", "ActiveEra")
             return result.value["index"]
         except:
-            return self.sub_iface.query("Session", "CurrentIndex") / 6
+            return self.getSession() / 6
 
     def isValidator(self):
         collator = self.conf.getOrDefault("chain.validatorAddress")
