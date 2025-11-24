@@ -119,9 +119,7 @@ class TaskSubstrateTurboflakesGrade(Task):
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Info,
             )
-            return False
-
-        if self.lastRatio > self.ratio:
+        elif self.lastRatio > self.ratio:
             self.notify(
                 f"Ratio decreased for stash {self.stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
