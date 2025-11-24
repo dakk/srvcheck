@@ -102,10 +102,7 @@ class TaskSubstrateTurboflakesGrade(Task):
         uri += "?session=current&show_summary=true&show_stats=true&show_discovery=true"
         data = getCall(uri, None)
 
-        print(data)
-        if not data["is_para"]:
-            # Not paravalidating
-            print('Not not paravalidating')
+        if not data["is_para"] or not 'para_summary' in data:
             return None
 
         mvr = float(data["para_summary"]["mv"]) / float(
