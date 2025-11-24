@@ -29,7 +29,7 @@ from srvcheck.tasks.task import hours, minutes
 from ..notification import Emoji, NotificationLevel
 from ..tasks import Task
 from ..utils import Bash, ConfItem, ConfSet, PlotsConf, SubPlotConf, cropData, savePlots
-from .chain import Chain
+from .chain import Chain, getCall
 
 ConfSet.addItem(ConfItem("chain.validatorAddress", description="Validator address"))
 
@@ -62,6 +62,100 @@ class SubstrateInterfaceWrapper(SubstrateInterface):
             SubstrateRequestException,
         ) as e:
             self.connect_websocket()
+
+
+class TaskSubstrateTurboflakesGrade(Task):
+    "https://github.com/turboflakes/one-t/blob/main/LEGENDS.md#val-performance-report-legend"
+    def __init__(self, services, checkEvery=minutes(5), notifyEvery=minutes(5)):
+        super().__init__("TaskSubstrateTurboflakesGrade", services, checkEvery, notifyEvery)
+
+        self.lastRatio = None
+        self.ratio = None
+
+    @staticmethod
+    def ratio_to_grade(ratio: int) -> str:
+        if ratio > 99:
+            return 'A+'
+        elif ratio > 95:
+            return 'A'
+        elif ratio > 90:
+            return 'B+'
+        elif ratio > 80:
+            return 'B'
+        elif ratio > 70:
+            return 'C+'
+        elif ratio > 60:
+            return 'C'
+        elif ratio > 50:
+            return 'D+'
+        elif ratio > 40:
+            return 'D'
+        else:
+            return 'F'
+
+    def getCurrentRatio(self):
+        uri = f"https://{self.s.chain.getNetwork().lower()}-onet-api.turboflakes.io/"
+        uri += f"api/v1/validators/{self.s.conf.getOrDefault("chain.validatorAddress")}"
+        uri += "?session=current&show_summary=true&show_stats=true&show_discovery=true"
+        data = getCall(uri, None)['result']
+        mvr = float(data['para_summary']['mv']) / float(data['para_summary']['iv'] + data['para_summary']['ev'] + data['para_summary']['mv'])
+        bvr = 1.0 - mvr
+        bar = float(data['para']['bitfields']['ba']) / float(data['para']['bitfields']['ba'] + data['para']['bitfields']['bu'])
+        ratio = bvr * 0.75 + bar * 0.25
+        return ratio
+
+    @staticmethod
+    def isPluggable(services):
+        if services.chain.getNetwork() in ["Kusama", "Polkadot"]:
+            return True
+        return False
+
+    def run(self):
+        if self.ratio is None:
+            self.ratio = self.getCurrentRatio()
+            self.lastRatio = self.ratio
+            self.notify(
+                f"Ratio initialized for stash {self.stash_address}: {self.ratio}% " 
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                level=NotificationLevel.Info,
+            )
+            return False
+
+        if self.lastRatio > self.ratio:
+            self.notify(
+                f"Ratio decreased for stash {self.stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
+                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                level=NotificationLevel.Warning,
+            )
+        elif self.lastRatio < self.ratio:
+            self.notify(
+                f"Ratio increased for stash {self.stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
+                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                level=NotificationLevel.Info,
+            )
+        elif self.ratio < 90:
+            self.notify(
+                f"Ratio is below 90% for stash {self.stash_address} is {self.ratio}% " 
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                level=NotificationLevel.Warning,
+            )
+        elif self.ratio < 80:
+            self.notify(
+                f"Ratio is below 80% for stash {self.stash_address} is {self.ratio}% " 
+                + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
+                level=NotificationLevel.Error,
+            )
+        else:
+            self.notify(
+                f"Node ratio for stash {self.stash_address} is {self.ratio}%: " 
+                + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)}",
+                level=NotificationLevel.Info,
+            )
+
+        self.lastRatio = self.ratio
+        return True
 
 
 class TaskSubstrateNewReferenda(Task):
@@ -377,6 +471,7 @@ class Substrate(Chain):
         TaskSubstrateReferendaVotingCheck,
         TaskSubstrateBlockProductionReport,
         TaskSubstrateBlockProductionReportCharts,
+        TaskSubstrateTurboflakesGrade
     ]
 
     def __init__(self, conf):
@@ -528,6 +623,7 @@ class Polkasama(Substrate):
         TaskSubstrateReferendaVotingCheck,
         TaskSubstrateBlockProductionReport,
         TaskSubstrateBlockProductionReportCharts,
+        TaskSubstrateTurboflakesGrade
     ]
 
     def __init__(self, conf):
