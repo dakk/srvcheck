@@ -101,6 +101,12 @@ class TaskSubstrateTurboflakesGrade(Task):
         uri += f"api/v1/validators/{self.s.conf.getOrDefault('chain.validatorAddress')}"
         uri += "?session=current&show_summary=true&show_stats=true&show_discovery=true"
         data = getCall(uri, None)
+
+        if not data["is_para"]:
+            # Not paravalidating
+            print('Not not paravalidating')
+            return None
+
         mvr = float(data["para_summary"]["mv"]) / float(
             data["para_summary"]["iv"]
             + data["para_summary"]["ev"]
@@ -125,13 +131,24 @@ class TaskSubstrateTurboflakesGrade(Task):
         if self.ratio is None:
             self.ratio = self.getCurrentRatio()
             self.lastRatio = self.ratio
-            notified = self.notify(
+
+            if self.ratio is None:
+                return False
+
+            return self.notify(
                 f"Ratio initialized: {self.ratio}% "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Helmet}",
                 level=NotificationLevel.Info,
             )
-        elif self.lastRatio > self.ratio:
+
+        ratio = self.getCurrentRatio()
+        if ratio is None:
+            return False
+
+        self.ratio = ratio
+
+        if self.lastRatio > self.ratio:
             notified = self.notify(
                 f"Ratio decreased to {self.ratio}% (was {self.lastRatio}%) "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
