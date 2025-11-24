@@ -97,7 +97,9 @@ class TaskSubstrateTurboflakesGrade(Task):
         uri = f"https://{self.s.chain.getNetwork().lower()}-onet-api.turboflakes.io/"
         uri += f"api/v1/validators/{self.s.conf.getOrDefault('chain.validatorAddress')}"
         uri += "?session=current&show_summary=true&show_stats=true&show_discovery=true"
-        data = getCall(uri, None)['result']
+        data = getCall(uri, None)
+        print(data)
+        data = data['result']
         mvr = float(data['para_summary']['mv']) / float(data['para_summary']['iv'] + data['para_summary']['ev'] + data['para_summary']['mv'])
         bvr = 1.0 - mvr
         bar = float(data['para']['bitfields']['ba']) / float(data['para']['bitfields']['ba'] + data['para']['bitfields']['bu'])
