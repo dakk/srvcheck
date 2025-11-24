@@ -111,44 +111,45 @@ class TaskSubstrateTurboflakesGrade(Task):
         return False
 
     def run(self):
+        stash_address = self.s.conf.getOrDefault('chain.validatorAddress')
         if self.ratio is None:
             self.ratio = self.getCurrentRatio()
             self.lastRatio = self.ratio
             self.notify(
-                f"Ratio initialized for stash {self.stash_address}: {self.ratio}% " 
+                f"Ratio initialized for stash {stash_address}: {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Info,
             )
         elif self.lastRatio > self.ratio:
             self.notify(
-                f"Ratio decreased for stash {self.stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
+                f"Ratio decreased for stash {stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Warning,
             )
         elif self.lastRatio < self.ratio:
             self.notify(
-                f"Ratio increased for stash {self.stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
+                f"Ratio increased for stash {stash_address} is {self.ratio}% (was {self.lastRatio}%) " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Info,
             )
         elif self.ratio < 90:
             self.notify(
-                f"Ratio is below 90% for stash {self.stash_address} is {self.ratio}% " 
+                f"Ratio is below 90% for stash {stash_address} is {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Warning,
             )
         elif self.ratio < 80:
             self.notify(
-                f"Ratio is below 80% for stash {self.stash_address} is {self.ratio}% " 
+                f"Ratio is below 80% for stash {stash_address} is {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Error,
                 noCheck=True
             )
         else:
             self.notify(
-                f"Node ratio for stash {self.stash_address} is {self.ratio}%: " 
+                f"Node ratio for stash {stash_address} is {self.ratio}%: " 
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)}",
                 level=NotificationLevel.Info,
             )
