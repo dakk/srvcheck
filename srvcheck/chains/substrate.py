@@ -66,8 +66,11 @@ class SubstrateInterfaceWrapper(SubstrateInterface):
 
 class TaskSubstrateTurboflakesGrade(Task):
     "https://github.com/turboflakes/one-t/blob/main/LEGENDS.md#val-performance-report-legend"
+
     def __init__(self, services, checkEvery=minutes(5), notifyEvery=minutes(5)):
-        super().__init__("TaskSubstrateTurboflakesGrade", services, checkEvery, notifyEvery)
+        super().__init__(
+            "TaskSubstrateTurboflakesGrade", services, checkEvery, notifyEvery
+        )
 
         self.lastRatio = None
         self.ratio = None
@@ -75,34 +78,40 @@ class TaskSubstrateTurboflakesGrade(Task):
     @staticmethod
     def ratio_to_grade(ratio: int) -> str:
         if ratio > 99:
-            return 'A+'
+            return "A+"
         elif ratio > 95:
-            return 'A'
+            return "A"
         elif ratio > 90:
-            return 'B+'
+            return "B+"
         elif ratio > 80:
-            return 'B'
+            return "B"
         elif ratio > 70:
-            return 'C+'
+            return "C+"
         elif ratio > 60:
-            return 'C'
+            return "C"
         elif ratio > 50:
-            return 'D+'
+            return "D+"
         elif ratio > 40:
-            return 'D'
+            return "D"
         else:
-            return 'F'
+            return "F"
 
     def getCurrentRatio(self):
         uri = f"https://{self.s.chain.getNetwork().lower()}-onet-api.turboflakes.io/"
         uri += f"api/v1/validators/{self.s.conf.getOrDefault('chain.validatorAddress')}"
         uri += "?session=current&show_summary=true&show_stats=true&show_discovery=true"
         data = getCall(uri, None)
-        mvr = float(data['para_summary']['mv']) / float(data['para_summary']['iv'] + data['para_summary']['ev'] + data['para_summary']['mv'])
+        mvr = float(data["para_summary"]["mv"]) / float(
+            data["para_summary"]["iv"]
+            + data["para_summary"]["ev"]
+            + data["para_summary"]["mv"]
+        )
         bvr = 1.0 - mvr
-        bar = float(data['para']['bitfields']['ba']) / float(data['para']['bitfields']['ba'] + data['para']['bitfields']['bu'])
+        bar = float(data["para"]["bitfields"]["ba"]) / float(
+            data["para"]["bitfields"]["ba"] + data["para"]["bitfields"]["bu"]
+        )
         ratio = bvr * 0.75 + bar * 0.25
-        return int(round(ratio * 100.))
+        return int(round(ratio * 100.0))
 
     @staticmethod
     def isPluggable(services):
@@ -111,21 +120,20 @@ class TaskSubstrateTurboflakesGrade(Task):
         return False
 
     def run(self):
-        stash_address = self.s.conf.getOrDefault('chain.validatorAddress')
-        notified = False 
+        notified = False
 
         if self.ratio is None:
             self.ratio = self.getCurrentRatio()
             self.lastRatio = self.ratio
             notified = self.notify(
-                f"Ratio initialized: {self.ratio}% " 
+                f"Ratio initialized: {self.ratio}% "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Helmet}",
                 level=NotificationLevel.Info,
             )
         elif self.lastRatio > self.ratio:
             notified = self.notify(
-                f"Ratio decreased to {self.ratio}% (was {self.lastRatio}%) " 
+                f"Ratio decreased to {self.ratio}% (was {self.lastRatio}%) "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.PosDown}",
@@ -133,7 +141,7 @@ class TaskSubstrateTurboflakesGrade(Task):
             )
         elif self.lastRatio < self.ratio:
             notified = self.notify(
-                f"Ratio increased to {self.ratio}% (was {self.lastRatio}%) " 
+                f"Ratio increased to {self.ratio}% (was {self.lastRatio}%) "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.lastRatio)} => "
                 + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.PosUp}",
@@ -141,22 +149,22 @@ class TaskSubstrateTurboflakesGrade(Task):
             )
         elif self.ratio < 90:
             notified = self.notify(
-                f"Ratio is below 90%: {self.ratio}% " 
+                f"Ratio is below 90%: {self.ratio}% "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Health}",
                 level=NotificationLevel.Warning,
             )
         elif self.ratio < 80:
             notified = self.notify(
-                f"Ratio is below 80%: {self.ratio}% " 
+                f"Ratio is below 80%: {self.ratio}% "
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})"
                 + f"{Emoji.Health}",
                 level=NotificationLevel.Error,
-                noCheck=True
+                noCheck=True,
             )
         # else:
         #     notified = self.notify(
-        #         f"Node ratio is {self.ratio}%: " 
+        #         f"Node ratio is {self.ratio}%: "
         #         + f"{TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)}",
         #         level=NotificationLevel.Info,
         #     )
@@ -478,7 +486,7 @@ class Substrate(Chain):
         TaskSubstrateReferendaVotingCheck,
         TaskSubstrateBlockProductionReport,
         TaskSubstrateBlockProductionReportCharts,
-        TaskSubstrateTurboflakesGrade
+        TaskSubstrateTurboflakesGrade,
     ]
 
     def __init__(self, conf):
@@ -521,7 +529,9 @@ class Substrate(Chain):
         era = self.getEra()
         if collator:
             result = self.sub_iface.query(
-                module="Staking", storage_function="ErasStakersOverview", params=[era, collator]
+                module="Staking",
+                storage_function="ErasStakersOverview",
+                params=[era, collator],
             )
             if result and result.value and result.value["total"] > 0:
                 return True
@@ -631,7 +641,7 @@ class Polkasama(Substrate):
         TaskSubstrateReferendaVotingCheck,
         TaskSubstrateBlockProductionReport,
         TaskSubstrateBlockProductionReportCharts,
-        TaskSubstrateTurboflakesGrade
+        TaskSubstrateTurboflakesGrade,
     ]
 
     def __init__(self, conf):
