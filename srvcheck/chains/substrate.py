@@ -66,7 +66,7 @@ class SubstrateInterfaceWrapper(SubstrateInterface):
 
 class TaskSubstrateTurboflakesGrade(Task):
     "https://github.com/turboflakes/one-t/blob/main/LEGENDS.md#val-performance-report-legend"
-    def __init__(self, services, checkEvery=minutes(5), notifyEvery=minutes(5)):
+    def __init__(self, services, checkEvery=minutes(5), notifyEvery=minutes(10)):
         super().__init__("TaskSubstrateTurboflakesGrade", services, checkEvery, notifyEvery)
 
         self.lastRatio = None
@@ -146,6 +146,7 @@ class TaskSubstrateTurboflakesGrade(Task):
                 f"Ratio is below 80% for stash {self.stash_address} is {self.ratio}% " 
                 + f"({TaskSubstrateTurboflakesGrade.ratio_to_grade(self.ratio)})",
                 level=NotificationLevel.Error,
+                noCheck=True
             )
         else:
             self.notify(
