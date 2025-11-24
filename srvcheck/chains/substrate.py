@@ -102,7 +102,7 @@ class TaskSubstrateTurboflakesGrade(Task):
         bvr = 1.0 - mvr
         bar = float(data['para']['bitfields']['ba']) / float(data['para']['bitfields']['ba'] + data['para']['bitfields']['bu'])
         ratio = bvr * 0.75 + bar * 0.25
-        return int(ratio * 100.)
+        return int(round(ratio * 100.))
 
     @staticmethod
     def isPluggable(services):
